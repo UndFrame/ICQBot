@@ -1,4 +1,7 @@
 package ru.undframe.icq.bot.command;
 
-public class CommandDispatcher {
+public interface CommandDispatcher {
+
+    void register(Command command);
+
 }
