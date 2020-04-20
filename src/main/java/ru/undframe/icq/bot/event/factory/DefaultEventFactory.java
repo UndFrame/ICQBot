@@ -20,8 +20,12 @@ public class DefaultEventFactory implements EventFactory, OnEventFetchListener {
     }
 
     @Override
-    public Event getEvent(ru.mail.im.botapi.fetcher.event.Event event) {
+    public List<Event> getEvent(ru.mail.im.botapi.fetcher.event.Event event) {
         if (event instanceof NewMessageEvent) {
+            NewMessageEvent newMessageEvent = (NewMessageEvent) event;
+            if (newMessageEvent.getText().startsWith("/"))
+                return defaultEventManager.getEvent(EventType.COMMAND);
+
             return defaultEventManager.getEvent(EventType.NEW_MESSAGE);
         }
         return null;
@@ -30,9 +34,9 @@ public class DefaultEventFactory implements EventFactory, OnEventFetchListener {
     @Override
     public void onEventFetch(List<ru.mail.im.botapi.fetcher.event.Event> events) {
         try {
-            for (ru.mail.im.botapi.fetcher.event.Event event : events) {
-                getEvent(event).handle(event);
-            }
+            for (ru.mail.im.botapi.fetcher.event.Event event : events)
+                for (Event ev : getEvent(event))
+                    ev.handle(event);
         } catch (IOException e) {
             e.printStackTrace();
         }

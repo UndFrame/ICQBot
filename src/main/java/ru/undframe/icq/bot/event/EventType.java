@@ -2,6 +2,6 @@ package ru.undframe.icq.bot.event;
 
 public enum EventType {
 
-    NEW_MESSAGE
+    NEW_MESSAGE,COMMAND
 
 }
