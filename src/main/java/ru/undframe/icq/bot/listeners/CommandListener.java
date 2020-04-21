@@ -6,6 +6,7 @@ import ru.undframe.icq.bot.exceptions.WrongArguments;
 import ru.undframe.icq.bot.service.commandservice.command.*;
 
 import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
 
 public class CommandListener implements Event {
     @Override
@@ -20,7 +21,7 @@ public class CommandListener implements Event {
         if (command != null) {
             String[] newArgs = args.length <= 1 ? new String[0] : new String[args.length - 1];
             System.arraycopy(args, 1, newArgs, 0, args.length - 1);
-            command.execute(new CommandArgs(command, Arrays.asList(newArgs), new DefaultCommandSource(newMessageEvent.getChat()), new StringReader(' ' + String.join(" ", newArgs))));
+            CompletableFuture.runAsync(()->command.execute(new CommandArgs(command, Arrays.asList(newArgs), new DefaultCommandSource(newMessageEvent.getChat(),newMessageEvent.getMessageId()), new StringReader(' ' + String.join(" ", newArgs)))));
         }
     }
 }

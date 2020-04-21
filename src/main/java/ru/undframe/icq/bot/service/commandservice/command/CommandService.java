@@ -19,7 +19,7 @@ public class CommandService implements CommandDispatcher {
 
     @Override
     public String getCommandHelp(CommandSource commandSource) {
-        StringBuilder stringBuilder = new StringBuilder();
+        StringBuilder stringBuilder = new StringBuilder("Bot commands:\n");
         for (Command command : commandMap.values()) {
             if(!command.visible(commandSource)) continue;
             stringBuilder.append("/");

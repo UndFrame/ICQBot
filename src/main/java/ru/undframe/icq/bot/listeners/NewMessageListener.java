@@ -10,6 +10,7 @@ public class NewMessageListener implements Event {
     @Override
     public void handle(Object o) throws IOException {
         NewMessageEvent newMessageEvent = (NewMessageEvent)o;
+
         Bot.getInstance().sendMessage(newMessageEvent.getChat(),"How are you?");
     }
 }

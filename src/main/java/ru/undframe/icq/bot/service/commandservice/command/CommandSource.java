@@ -4,4 +4,5 @@ import ru.mail.im.botapi.fetcher.Chat;
 
 public interface CommandSource {
     Chat getChat();
+    long messageId();
 }

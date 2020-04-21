@@ -1,5 +1,7 @@
 package ru.undframe.icq.bot;
 
+import com.google.gson.Gson;
+import org.json.JSONObject;
 import ru.mail.im.botapi.BotApiClient;
 import ru.mail.im.botapi.BotApiClientController;
 import ru.mail.im.botapi.api.entity.EditTextRequest;
@@ -15,12 +17,18 @@ import ru.undframe.icq.bot.service.commandservice.command.CommandBuilder;
 import ru.undframe.icq.bot.service.commandservice.command.CommandDispatcher;
 import ru.undframe.icq.bot.service.commandservice.command.CommandService;
 
-import java.io.IOException;
+import java.io.*;
+import java.net.URI;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
 
 public class UFBot implements Bot {
 
+    private static final String PATH_TO_PROPERTIES = "bot.properties";
     private static BotApiClientController botApiClientController;
 
     private static Bot bot;
@@ -30,9 +38,19 @@ public class UFBot implements Bot {
     }
 
     public static void main(String[] args) {
-        Map<String, String> getenv = System.getenv();
-        if (!getenv.containsKey("TOKEN")) throw new NullPointerException("token not found");
-        BotApiClient client = new BotApiClient(getenv.get("TOKEN"));
+        Properties prop = new Properties();
+
+        try {
+            ClassLoader classLoader = UFBot.class.getClassLoader();
+            File configFile=new File(Objects.requireNonNull(classLoader.getResource(PATH_TO_PROPERTIES)).getFile());
+            FileInputStream fileInputStream = new FileInputStream(configFile);
+            prop.load(fileInputStream);
+        } catch (IOException e) {
+            System.out.println("Ошибка в программе: файл " + PATH_TO_PROPERTIES + " не обнаружено");
+            e.printStackTrace();
+        }
+
+        BotApiClient client = new BotApiClient(prop.getProperty("TOKEN"));
         bot = new UFBot();
         botApiClientController = BotApiClientController.startBot(client);
         EventManager eventManager = new DefaultEventManager();
@@ -46,7 +64,11 @@ public class UFBot implements Bot {
                         .execute(commandContext -> {
                             Chat chat = commandContext.getSource().getChat();
                             chat.getChatId();
-                            Bot.getInstance().sendMessage(chat, CommandDispatcher.get().getCommandHelp(commandContext.getSource()));
+                            String commandHelp = CommandDispatcher.get().getCommandHelp(commandContext.getSource());
+                            Bot.getInstance().sendMessage(chat, commandHelp);
+                        })
+                        .exceptionally((commandContext, e) -> {
+                            e.printStackTrace();
                         })
                         .build());
         CommandDispatcher.get()
@@ -57,6 +79,62 @@ public class UFBot implements Bot {
                 .register(CommandBuilder.builder().name("stop")
                         .visibleFunction(commandSource -> false)
                         .build());
+/*
+https://coronavirus-tracker-api.herokuapp.com/v2/locations/187
+ */
+        CommandDispatcher.get()
+                .register(CommandBuilder.builder().name("weather")
+                        .lore("Узнать погоду в городе Ижевск")
+                        .execute(commandContext -> {
+                            Bot.getInstance().sendMessage(commandContext.getSource().getChat(),"Отправка запроса на openweathermap.org...");
+                            URL url = new URL("https://api.openweathermap.org/data/2.5/weather?id=554840&appid=" + prop.getProperty("WEATHER_TOKEN"));
+                            URLConnection urlConnection = url.openConnection();
+                            BufferedReader in = new BufferedReader(
+                                    new InputStreamReader(
+                                            urlConnection.getInputStream()));
+                            StringBuilder response =new StringBuilder();
+
+                            String inputLine;
+                            while ((inputLine = in.readLine()) != null)
+                                response.append(inputLine);
+                            in.close();
+                            JSONObject json = new JSONObject(response.toString());
+                            Bot.getInstance().sendMessage(commandContext.getSource().getChat(),"Погода в Ижевске: "+(json.getJSONObject("main").getInt("temp")-273));
+                        })
+                        .exceptionally((commandContext, e) -> {
+                            Bot.getInstance().sendMessage(commandContext.getSource().getChat(),"Произошла ошибка");
+                            e.printStackTrace();
+                        })
+                        .visibleFunction(commandSource -> true)
+                        .build());
+        CommandDispatcher.get()
+                .register(CommandBuilder.builder().name("coronavirus")
+                        .lore("Узнать информацию по коронавирусу в России")
+                        .execute(commandContext -> {
+                            Bot.getInstance().sendMessage(commandContext.getSource().getChat(),"Отправка запроса...");
+                            URL url = new URL("https://coronavirus-tracker-api.herokuapp.com/v2/locations/187");
+                            URLConnection urlConnection = url.openConnection();
+                            BufferedReader in = new BufferedReader(
+                                    new InputStreamReader(
+                                            urlConnection.getInputStream()));
+                            StringBuilder response =new StringBuilder();
+
+                            String inputLine;
+                            while ((inputLine = in.readLine()) != null)
+                                response.append(inputLine);
+                            in.close();
+                            JSONObject json = new JSONObject(response.toString());
+                            Bot.getInstance().sendMessage(commandContext.getSource().getChat(),"В России заболело: "+(json.getJSONObject("location").getJSONObject("latest").getInt("confirmed")));
+                        })
+                        .exceptionally((commandContext, e) -> {
+                            Bot.getInstance().sendMessage(commandContext.getSource().getChat(),"Произошла ошибка");
+                            e.printStackTrace();
+                        })
+                        .visibleFunction(commandSource -> true)
+                        .build());
+
+
+
 
     }
 
@@ -69,9 +147,10 @@ public class UFBot implements Bot {
     }
 
     @Override
-    public void editText(Chat chat, String text) throws IOException {
+    public void editText(Chat chat, long messageId, String text) throws IOException {
         botApiClientController.editText(new EditTextRequest()
                 .setChatId(chat.getChatId())
+                .setMsgId(messageId)
                 .setNewText(text)
         );
     }
