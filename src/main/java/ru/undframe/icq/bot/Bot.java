@@ -12,6 +12,7 @@ public interface Bot {
     }
 
     <T extends Service> void registerService(Class<T> clazz, T service);
+    <T extends Service> void unregisterService(Class<T> clazz);
     <T extends Service> T getService(Class<T> clazz);
 
 }

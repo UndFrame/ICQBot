@@ -34,4 +34,14 @@ public class CommandService implements CommandDispatcher {
         }
         return stringBuilder.toString();
     }
+
+    @Override
+    public void enable() {
+
+    }
+
+    @Override
+    public void disable() {
+
+    }
 }

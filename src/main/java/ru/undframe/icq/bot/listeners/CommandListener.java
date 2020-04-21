@@ -1,13 +1,9 @@
 package ru.undframe.icq.bot.listeners;
 
 import ru.mail.im.botapi.fetcher.event.NewMessageEvent;
-import ru.undframe.icq.bot.Bot;
 import ru.undframe.icq.bot.event.Event;
 import ru.undframe.icq.bot.exceptions.WrongArguments;
-import ru.undframe.icq.bot.service.commandservice.command.Command;
-import ru.undframe.icq.bot.service.commandservice.command.CommandArgs;
-import ru.undframe.icq.bot.service.commandservice.command.DefaultCommandSource;
-import ru.undframe.icq.bot.service.commandservice.command.StringReader;
+import ru.undframe.icq.bot.service.commandservice.command.*;
 
 import java.util.Arrays;
 
@@ -20,9 +16,9 @@ public class CommandListener implements Event {
         String text = newMessageEvent.getText();
         String substring = text.substring(1);
         String[] args = substring.split(" ");
-        Command command = Bot.getInstance().getCommandDispatcher().getCommand(args[0]);
+        Command command = CommandDispatcher.get().getCommand(args[0]);
         if (command != null) {
-            String[] newArgs =args.length<=1? new String[0] : new String[args.length - 1];
+            String[] newArgs = args.length <= 1 ? new String[0] : new String[args.length - 1];
             System.arraycopy(args, 1, newArgs, 0, args.length - 1);
             command.execute(new CommandArgs(command, Arrays.asList(newArgs), new DefaultCommandSource(newMessageEvent.getChat()), new StringReader(' ' + String.join(" ", newArgs))));
         }
