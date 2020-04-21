@@ -1,4 +1,4 @@
-package ru.undframe.icq.bot.command;
+package ru.undframe.icq.bot.service.commandservice.command;
 
 import java.util.List;
 

@@ -1,6 +1,4 @@
-package ru.undframe.icq.bot.command;
-
-import java.util.UUID;
+package ru.undframe.icq.bot.service.commandservice.command;
 
 public interface CommandContext {
 

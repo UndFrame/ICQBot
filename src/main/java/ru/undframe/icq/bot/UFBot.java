@@ -2,19 +2,16 @@ package ru.undframe.icq.bot;
 
 import ru.mail.im.botapi.BotApiClient;
 import ru.mail.im.botapi.BotApiClientController;
+import ru.mail.im.botapi.api.entity.EditTextRequest;
 import ru.mail.im.botapi.api.entity.SendTextRequest;
 import ru.mail.im.botapi.fetcher.Chat;
-import ru.undframe.icq.bot.command.CommandBuilder;
-import ru.undframe.icq.bot.command.CommandDispatcher;
-import ru.undframe.icq.bot.command.DefaultCommandDispatcher;
-import ru.undframe.icq.bot.command.Parameter;
-import ru.undframe.icq.bot.command.types.IntegerParameter;
-import ru.undframe.icq.bot.command.types.WordParameter;
+import ru.undframe.icq.bot.service.commandservice.command.CommandBuilder;
+import ru.undframe.icq.bot.service.commandservice.command.CommandDispatcher;
+import ru.undframe.icq.bot.service.commandservice.command.CommandService;
 import ru.undframe.icq.bot.event.DefaultEventManager;
 import ru.undframe.icq.bot.event.EventManager;
 import ru.undframe.icq.bot.event.EventType;
 import ru.undframe.icq.bot.event.factory.DefaultEventFactory;
-import ru.undframe.icq.bot.exceptions.CommandParseException;
 import ru.undframe.icq.bot.listeners.CommandListener;
 import ru.undframe.icq.bot.listeners.NewMessageListener;
 
@@ -42,31 +39,21 @@ public class UFBot implements Bot {
         eventManager.addListener(EventType.COMMAND, new CommandListener());
         client.addOnEventFetchListener(new DefaultEventFactory(eventManager));
         Bot.getInstance().getCommandDispatcher()
-                .register(CommandBuilder.builder().name("test")
-                        .lore("command for test")
-                        .parameter(new Parameter<>("sub command", new WordParameter()))
-                        .parameter(new Parameter<>("integer2", new IntegerParameter()))
-                        .execute(commandContext -> {
-                            String value = commandContext.getArg(String.class);
-                            Integer value2 = commandContext.getArg(Integer.class);
-                            Bot.getInstance().sendMessage(commandContext.getSource().getChat(), value + " " + value2);
-                        }).exceptionally((s, e) -> {
-                            if (e instanceof CommandParseException
-                            || e instanceof NumberFormatException) {
-                                Bot.getInstance().sendMessage(s.getSource().getChat(), "Произошла ошибка при формировании аргуметов ");
-                            }else
-                            Bot.getInstance().sendMessage(s.getSource().getChat(), "Произошла ошибка: " + e.getMessage());
-                        }).build());
-
-        Bot.getInstance().getCommandDispatcher()
                 .register(CommandBuilder.builder().name("help")
+                        .visibleFunction(commandSource -> false)
+                        .execute(commandContext -> {
+                            Chat chat = commandContext.getSource().getChat();
+                            chat.getChatId();
+                            Bot.getInstance().sendMessage(chat, bot.getCommandDispatcher().getCommandHelp(commandContext.getSource()));
+                        })
                         .build());
-
         Bot.getInstance().getCommandDispatcher()
                 .register(CommandBuilder.builder().name("start")
+                        .visibleFunction(commandSource -> false)
                         .build());
         Bot.getInstance().getCommandDispatcher()
                 .register(CommandBuilder.builder().name("stop")
+                        .visibleFunction(commandSource -> false)
                         .build());
 
     }
@@ -80,10 +67,18 @@ public class UFBot implements Bot {
     }
 
     @Override
+    public void editText(Chat chat, String text) throws IOException {
+        botApiClientController.editText(new EditTextRequest()
+                .setChatId(chat.getChatId())
+                .setNewText(text)
+        );
+    }
+
+    @Override
     public CommandDispatcher getCommandDispatcher() {
         return commandDispatcher;
     }
 
-    private CommandDispatcher commandDispatcher = new DefaultCommandDispatcher();
+    private CommandDispatcher commandDispatcher = new CommandService();
 
 }

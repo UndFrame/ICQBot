@@ -1,8 +1,8 @@
-package ru.undframe.icq.bot.command.types;
+package ru.undframe.icq.bot.service.commandservice.command.types;
 
-import ru.undframe.icq.bot.command.AbstractType;
-import ru.undframe.icq.bot.command.CommandSource;
-import ru.undframe.icq.bot.command.StringReader;
+import ru.undframe.icq.bot.service.commandservice.command.AbstractType;
+import ru.undframe.icq.bot.service.commandservice.command.CommandSource;
+import ru.undframe.icq.bot.service.commandservice.command.StringReader;
 import ru.undframe.icq.bot.exceptions.CommandParseException;
 
 public class WordParameter extends AbstractType<String> {
