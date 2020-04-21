@@ -4,27 +4,30 @@ import ru.mail.im.botapi.BotApiClient;
 import ru.mail.im.botapi.BotApiClientController;
 import ru.mail.im.botapi.api.entity.SendTextRequest;
 import ru.mail.im.botapi.fetcher.Chat;
-import ru.mail.im.botapi.fetcher.event.NewChatMembersEvent;
-import ru.undframe.icq.bot.command.Command;
-import ru.undframe.icq.bot.command.TestCommand;
+import ru.undframe.icq.bot.command.CommandBuilder;
+import ru.undframe.icq.bot.command.CommandDispatcher;
+import ru.undframe.icq.bot.command.DefaultCommandDispatcher;
+import ru.undframe.icq.bot.command.Parameter;
+import ru.undframe.icq.bot.command.types.IntegerParameter;
+import ru.undframe.icq.bot.command.types.WordParameter;
 import ru.undframe.icq.bot.event.DefaultEventManager;
 import ru.undframe.icq.bot.event.EventManager;
 import ru.undframe.icq.bot.event.EventType;
 import ru.undframe.icq.bot.event.factory.DefaultEventFactory;
+import ru.undframe.icq.bot.exceptions.CommandParseException;
 import ru.undframe.icq.bot.listeners.CommandListener;
 import ru.undframe.icq.bot.listeners.NewMessageListener;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
-public class UFBot implements Bot{
+public class UFBot implements Bot {
 
     private static BotApiClientController botApiClientController;
 
     private static Bot bot;
 
-    public static Bot getInstance(){
+    static Bot getInstance() {
         return bot;
     }
 
@@ -35,11 +38,36 @@ public class UFBot implements Bot{
         bot = new UFBot();
         botApiClientController = BotApiClientController.startBot(client);
         EventManager eventManager = new DefaultEventManager();
-        eventManager.addListener(EventType.NEW_MESSAGE,new NewMessageListener());
-        eventManager.addListener(EventType.COMMAND,new CommandListener());
+        eventManager.addListener(EventType.NEW_MESSAGE, new NewMessageListener());
+        eventManager.addListener(EventType.COMMAND, new CommandListener());
         client.addOnEventFetchListener(new DefaultEventFactory(eventManager));
+        Bot.getInstance().getCommandDispatcher()
+                .register(CommandBuilder.builder().name("test")
+                        .lore("command for test")
+                        .parameter(new Parameter<>("sub command", new WordParameter()))
+                        .parameter(new Parameter<>("integer2", new IntegerParameter()))
+                        .execute(commandContext -> {
+                            String value = commandContext.getArg(String.class);
+                            Integer value2 = commandContext.getArg(Integer.class);
+                            Bot.getInstance().sendMessage(commandContext.getSource().getChat(), value + " " + value2);
+                        }).exceptionally((s, e) -> {
+                            if (e instanceof CommandParseException
+                            || e instanceof NumberFormatException) {
+                                Bot.getInstance().sendMessage(s.getSource().getChat(), "Произошла ошибка при формировании аргуметов ");
+                            }else
+                            Bot.getInstance().sendMessage(s.getSource().getChat(), "Произошла ошибка: " + e.getMessage());
+                        }).build());
 
-        bot.registerCommand(new TestCommand());
+        Bot.getInstance().getCommandDispatcher()
+                .register(CommandBuilder.builder().name("help")
+                        .build());
+
+        Bot.getInstance().getCommandDispatcher()
+                .register(CommandBuilder.builder().name("start")
+                        .build());
+        Bot.getInstance().getCommandDispatcher()
+                .register(CommandBuilder.builder().name("stop")
+                        .build());
 
     }
 
@@ -51,16 +79,11 @@ public class UFBot implements Bot{
         );
     }
 
-
-    private Map<String,Command> commandMap = new HashMap<>();
-
     @Override
-    public void registerCommand(Command command) {
-        commandMap.put(command.getCommand(),command);
+    public CommandDispatcher getCommandDispatcher() {
+        return commandDispatcher;
     }
 
-    @Override
-    public Command getCommand(String command) {
-        return commandMap.getOrDefault(command,null);
-    }
+    private CommandDispatcher commandDispatcher = new DefaultCommandDispatcher();
+
 }

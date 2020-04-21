@@ -4,4 +4,5 @@ public interface CommandDispatcher {
 
     void register(Command command);
 
+    Command getCommand(String name);
 }

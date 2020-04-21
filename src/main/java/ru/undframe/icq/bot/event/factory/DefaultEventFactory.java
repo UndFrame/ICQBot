@@ -8,6 +8,7 @@ import ru.undframe.icq.bot.event.EventManager;
 import ru.undframe.icq.bot.event.EventType;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class DefaultEventFactory implements EventFactory, OnEventFetchListener {
@@ -28,7 +29,7 @@ public class DefaultEventFactory implements EventFactory, OnEventFetchListener {
 
             return defaultEventManager.getEvent(EventType.NEW_MESSAGE);
         }
-        return null;
+        return new ArrayList<>();
     }
 
     @Override
